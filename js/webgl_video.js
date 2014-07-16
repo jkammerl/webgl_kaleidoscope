@@ -1,7 +1,10 @@
 WebGLVideo = function (containerEl) {
+    this.container_ = containerEl;
     this.scene_;
     this.camera_;
+    this.controls_;
     this.renderer_;
+    this.effect_;
     this.mesh_;
     this.shader_;
     this.videoEl_;
@@ -17,7 +20,7 @@ WebGLVideo = function (containerEl) {
     }
 }
 
-WebGLVideo.FOCAL_LENGTH = 35;
+WebGLVideo.FOCAL_LENGTH = 90;
 
 WebGLVideo.VERTEX_SHADER = 'shaders/vertex.vsh';
 
@@ -34,15 +37,25 @@ WebGLVideo.prototype.initWebGL = function (containerEl) {
         Detector.addGetWebGLMessage();
         return false;
     }
+
     this.renderer_.setSize(window.innerWidth, window.innerHeight);
-    containerEl.appendChild(this.renderer_.domElement);
+
+    this.renderer_.gammaInput = true;
+    this.renderer_.gammaOutput = true;
+
+    this.renderer_.shadowMapEnabled = true;
+    this.renderer_.shadowMapCullFace = THREE.CullFaceBack;
+
+    this.effect_ = new THREE.StereoEffect(renderer);
+
+    this.container_.appendChild(this.renderer_.domElement);
 
     // create a scene
     this.scene_ = new THREE.Scene();
 
     // put a camera in the scene
-    this.camera_ = new THREE.PerspectiveCamera(WebGLVideo.FOCAL_LENGTH, window.innerWidth / window.innerHeight, 1, 1000);
-    this.camera_.position.set(0, 0, 6);
+    this.camera_ = new THREE.PerspectiveCamera(WebGLVideo.FOCAL_LENGTH, window.innerWidth / window.innerHeight, 0.001, 1000);
+    this.camera_.position.set(0, 0, 0);
     this.scene_.add(this.camera_);
 
     var webrtc_init_callback = function (videoEl) {
@@ -68,17 +81,35 @@ WebGLVideo.prototype.initWebGL = function (containerEl) {
     };
     var webrtc_video = new WebRtcVideo(document, webrtc_init_callback.bind(this));
 
-    var onWindowResize = function () {
-        this.videoAspect_ = window.innerWidth / window.innerHeight;
-        this.camera_.aspect = this.videoAspect_
-        this.camera_.updateProjectionMatrix();
+    function setOrientationControls(e) {
+        if (!e.alpha) {
+          return;
+        }
+        if (this.controls_ == null) {
+            this.controls_ = new THREE.DeviceOrientationControls(this.camera_ , true);
+            this.controls_.connect();
+            this.controls_.update();
+        }
+        window.removeEventListener('deviceorientation', setOrientationControls.bind(this));
+    }
+    window.addEventListener('deviceorientation', setOrientationControls, true);
+    window.addEventListener('resize', this.onWindowResize.bind(this), false);
 
-        this.renderer_.setSize(window.innerWidth, window.innerHeight);
-    };
-
-    window.addEventListener('resize', onWindowResize.bind(this), false);
+    this.container_.addEventListener('click', this.onClickFullscreen.bind(this), false);
 
     return true;
+}
+
+WebGLVideo.prototype.onClickFullscreen = function () {
+  if (this.container_.requestFullscreen) {
+    this.container_.requestFullscreen();
+  } else if (this.container_.msRequestFullscreen) {
+    this.container_.msRequestFullscreen();
+  } else if (this.container_.mozRequestFullScreen) {
+    this.container_.mozRequestFullScreen();
+  } else if (this.container_.webkitRequestFullscreen) {
+    this.container_.webkitRequestFullscreen();
+  }
 }
 
 WebGLVideo.prototype.materialUpdate = function () {
@@ -110,6 +141,7 @@ WebGLVideo.prototype.createScene = function () {
 
     var geom = new THREE.PlaneGeometry(3, 3 * this.videoAspect_, this.config_.vertices, this.config_.vertices);
     var newMesh = new THREE.Mesh(geom, material);
+    newMesh.position.set(0, 0, 22);
 
     // replace mesh if is already exists
     if (this.mesh_) {
@@ -124,7 +156,22 @@ WebGLVideo.prototype.render = function () {
         this.videoTexture_.needsUpdate = true;
     }
     // actually render the scene
-    this.renderer_.render(this.scene_, this.camera_);
+    effect.render(this.scene_, this.camera_);
+}
+
+WebGLVideo.prototype.update = function() {
+  this.onWindowResize();
+  if (this.controls_) {
+      this.controls_.update();
+  }
+}
+
+WebGLVideo.prototype.onWindowResize = function () {
+    this.camera_.aspect = window.innerWidth / window.innerHeight;
+    this.camera_.updateProjectionMatrix();
+
+    this.renderer_.setSize(window.innerWidth, window.innerHeight);
+    this.effect_.setSize(window.innerWidth, window.innerHeight);
 }
 
 WebGLVideo.prototype.animate = function () {
@@ -141,8 +188,8 @@ WebGLVideo.prototype.animate = function () {
         this.mesh_.rotation.y = y_rot;
     }
 
+    this.update();
     this.render();
 
-    var boundAnimate = this.animate.bind(this);
-    requestAnimationFrame(boundAnimate);
+    requestAnimationFrame(this.animate.bind(this));
 }
