@@ -1,6 +1,6 @@
-webgl_webrtc_fun
+webgl_kaleidoscope
 ================
 
 Using WebRTC video texture in WebGL shader
 
-http://kammerl.de/webbrtc_webgl/
+http://kammerl.de/webgl_kaleidoscope/
