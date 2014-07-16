@@ -46,7 +46,7 @@ WebGLVideo.prototype.initWebGL = function (containerEl) {
     this.renderer_.shadowMapEnabled = true;
     this.renderer_.shadowMapCullFace = THREE.CullFaceBack;
 
-    this.effect_ = new THREE.StereoEffect(renderer);
+    this.effect_ = new THREE.StereoEffect(this.renderer_);
 
     this.container_.appendChild(this.renderer_.domElement);
 
@@ -141,7 +141,8 @@ WebGLVideo.prototype.createScene = function () {
 
     var geom = new THREE.PlaneGeometry(3, 3 * this.videoAspect_, this.config_.vertices, this.config_.vertices);
     var newMesh = new THREE.Mesh(geom, material);
-    newMesh.position.set(0, 0, 22);
+    newMesh.position.set(0, 0, 5);
+    this.camera_.lookAt(newMesh.position);
 
     // replace mesh if is already exists
     if (this.mesh_) {
@@ -156,7 +157,7 @@ WebGLVideo.prototype.render = function () {
         this.videoTexture_.needsUpdate = true;
     }
     // actually render the scene
-    effect.render(this.scene_, this.camera_);
+    this.effect_.render(this.scene_, this.camera_);
 }
 
 WebGLVideo.prototype.update = function() {
