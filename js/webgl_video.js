@@ -13,7 +13,7 @@ WebGLVideo = function (containerEl) {
     this.lastFrameTimestamp_ = 0.0;
     this.animationTime_ = 0.0;
 
-    this.config_ = new WebGLConfig(this.createScene.bind(this), this.materialUpdate.bind(this));
+    this.config_ = new WebGLConfig();
 
     if (this.initWebGL(containerEl)) {
         this.animate();
@@ -21,6 +21,8 @@ WebGLVideo = function (containerEl) {
 }
 
 WebGLVideo.FOCAL_LENGTH = 90;
+
+WebGLVideo.NUM_VERTICES = 32;
 
 WebGLVideo.VERTEX_SHADER = 'shaders/vertex.vsh';
 
@@ -68,10 +70,6 @@ WebGLVideo.prototype.initWebGL = function (containerEl) {
                 'texture': {
                     type: 't',
                     value: this.videoTexture_
-                },
-                'depth': {
-                    type: 'f',
-                    value: this.config_.depth
                 }
             },
             vertexShader: this.loadShader(WebGLVideo.VERTEX_SHADER),
@@ -112,10 +110,6 @@ WebGLVideo.prototype.onClickFullscreen = function () {
   }
 }
 
-WebGLVideo.prototype.materialUpdate = function () {
-    this.mesh_.material.uniforms.depth.value = this.config_.depth;
-}
-
 WebGLVideo.prototype.loadShader = function (url) {
     var shaderSrc;
     var result = jQuery.ajax(url, {
@@ -136,12 +130,12 @@ WebGLVideo.prototype.createScene = function () {
         vertexShader: this.shader_.vertexShader,
         fragmentShader: this.shader_.fragmentShader,
         side: THREE.DoubleSide,
-        wireframe: this.config_.wireframe
+        wireframe: false
     });
 
-    var geom = new THREE.PlaneGeometry(3, 3 * this.videoAspect_, this.config_.vertices, this.config_.vertices);
+    var geom = new THREE.CircleGeometry(3, WebGLVideo.NUM_VERTICES);
     var newMesh = new THREE.Mesh(geom, material);
-    newMesh.position.set(0, 0, 5);
+    newMesh.position.set(0, 0, 3);
     this.camera_.lookAt(newMesh.position);
 
     // replace mesh if is already exists
@@ -176,17 +170,13 @@ WebGLVideo.prototype.onWindowResize = function () {
 }
 
 WebGLVideo.prototype.animate = function () {
+
     if (this.mesh_) {
         var time_passed = Date.now() - this.lastFrameTimestamp_;
         this.lastFrameTimestamp_ = Date.now();
         this.animationTime_ += time_passed * this.config_.speed * 0.0005;
 
-        var pi_timer = this.animationTime_ % (Math.PI);
-        var y_rot = Math.abs(Math.pow(Math.sin(pi_timer), 3.0)) * Math.PI;
-        if (pi_timer > Math.PI / 2) {
-            y_rot = 2.0 * Math.PI - y_rot;
-        }
-        this.mesh_.rotation.y = y_rot;
+        this.mesh_.rotation.z = this.animationTime_;
     }
 
     this.update();
