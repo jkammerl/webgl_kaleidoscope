@@ -8,12 +8,9 @@ WebGLVideo = function (containerEl) {
     this.mesh_;
     this.shader_;
     this.videoEl_;
-    this.videoAspect_;
     this.videoTexture_;
     this.lastFrameTimestamp_ = 0.0;
     this.animationTime_ = 0.0;
-
-    this.config_ = new WebGLConfig();
 
     if (this.initWebGL(containerEl)) {
         this.animate();
@@ -22,7 +19,9 @@ WebGLVideo = function (containerEl) {
 
 WebGLVideo.FOCAL_LENGTH = 90;
 
-WebGLVideo.NUM_VERTICES = 32;
+WebGLVideo.NUM_VERTICES = 64;
+
+WebGLVideo.ROT_SPEED = 1.0;
 
 WebGLVideo.VERTEX_SHADER = 'shaders/vertex.vsh';
 
@@ -32,8 +31,7 @@ WebGLVideo.prototype.initWebGL = function (containerEl) {
     if (Detector.webgl) {
         this.renderer_ = new THREE.WebGLRenderer({
             antialias: true, // to get smoother output
-            preserveDrawingBuffer: true, // to allow screenshot
-            doubleSided: true
+            preserveDrawingBuffer: true // to allow screenshot
         });
     } else {
         Detector.addGetWebGLMessage();
@@ -41,12 +39,6 @@ WebGLVideo.prototype.initWebGL = function (containerEl) {
     }
 
     this.renderer_.setSize(window.innerWidth, window.innerHeight);
-
-    this.renderer_.gammaInput = true;
-    this.renderer_.gammaOutput = true;
-
-    this.renderer_.shadowMapEnabled = true;
-    this.renderer_.shadowMapCullFace = THREE.CullFaceBack;
 
     this.effect_ = new THREE.StereoEffect(this.renderer_);
 
@@ -63,8 +55,7 @@ WebGLVideo.prototype.initWebGL = function (containerEl) {
     var webrtc_init_callback = function (videoEl) {
         this.videoTexture_ = new THREE.Texture(videoEl);
         this.videoEl_ = videoEl;
-        this.videoAspect_ = videoEl.height / videoEl.width;
-
+   
         this.shader_ = {
             uniforms: {
                 'texture': {
@@ -128,22 +119,15 @@ WebGLVideo.prototype.createScene = function () {
     var material = new THREE.ShaderMaterial({
         uniforms: this.shader_.uniforms,
         vertexShader: this.shader_.vertexShader,
-        fragmentShader: this.shader_.fragmentShader,
-        side: THREE.DoubleSide,
-        wireframe: false
+        fragmentShader: this.shader_.fragmentShader
     });
 
     var geom = new THREE.CircleGeometry(3, WebGLVideo.NUM_VERTICES);
-    var newMesh = new THREE.Mesh(geom, material);
-    newMesh.position.set(0, 0, 3);
-    this.camera_.lookAt(newMesh.position);
+    this.mesh_ = new THREE.Mesh(geom, material);
+    this.mesh_.position.set(0, 0, -3);
+    this.camera_.lookAt(this.mesh_.position);
 
-    // replace mesh if is already exists
-    if (this.mesh_) {
-        this.scene_.remove(this.mesh_);
-    }
-    this.scene_.add(newMesh);
-    this.mesh_ = newMesh;
+    this.scene_.add(this.mesh_);
 }
 
 WebGLVideo.prototype.render = function () {
@@ -152,13 +136,6 @@ WebGLVideo.prototype.render = function () {
     }
     // actually render the scene
     this.effect_.render(this.scene_, this.camera_);
-}
-
-WebGLVideo.prototype.update = function() {
-  this.onWindowResize();
-  if (this.controls_) {
-      this.controls_.update();
-  }
 }
 
 WebGLVideo.prototype.onWindowResize = function () {
@@ -172,14 +149,18 @@ WebGLVideo.prototype.onWindowResize = function () {
 WebGLVideo.prototype.animate = function () {
 
     if (this.mesh_) {
+        // TODO: THREE.Clock
         var time_passed = Date.now() - this.lastFrameTimestamp_;
         this.lastFrameTimestamp_ = Date.now();
-        this.animationTime_ += time_passed * this.config_.speed * 0.0005;
+        this.animationTime_ += time_passed * WebGLVideo.ROT_SPEED * 0.0005;
 
         this.mesh_.rotation.z = this.animationTime_;
     }
 
-    this.update();
+    if (this.controls_) {
+      this.controls_.update();
+    }
+
     this.render();
 
     requestAnimationFrame(this.animate.bind(this));
