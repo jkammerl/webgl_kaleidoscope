@@ -2,7 +2,6 @@ WebGLVideo = function (containerEl) {
     this.container_ = containerEl;
     this.scene_;
     this.camera_;
-    this.controls_;
     this.renderer_;
     this.effect_;
     this.mesh_;
@@ -11,6 +10,7 @@ WebGLVideo = function (containerEl) {
     this.videoTexture_;
     this.lastFrameTimestamp_ = 0.0;
     this.animationTime_ = 0.0;
+    this.orientation_ = 0.0;
 
     if (this.initWebGL(containerEl)) {
         this.animate();
@@ -74,12 +74,7 @@ WebGLVideo.prototype.initWebGL = function (containerEl) {
         if (!e.alpha) {
           return;
         }
-        if (this.controls_ == null) {
-            this.controls_ = new THREE.DeviceOrientationControls(this.camera_ , true);
-            this.controls_.connect();
-            this.controls_.update();
-        }
-        window.removeEventListener('deviceorientation', setOrientationControls.bind(this));
+        this.orientation_ = e.alpha / 180.0 * Math.PI;
     }
     window.addEventListener('deviceorientation', setOrientationControls, true);
     window.addEventListener('resize', this.onWindowResize.bind(this), false);
@@ -149,16 +144,7 @@ WebGLVideo.prototype.onWindowResize = function () {
 WebGLVideo.prototype.animate = function () {
 
     if (this.mesh_) {
-        // TODO: THREE.Clock
-        var time_passed = Date.now() - this.lastFrameTimestamp_;
-        this.lastFrameTimestamp_ = Date.now();
-        this.animationTime_ += time_passed * WebGLVideo.ROT_SPEED * 0.0005;
-
-        this.mesh_.rotation.z = this.animationTime_;
-    }
-
-    if (this.controls_) {
-      this.controls_.update();
+        this.mesh_.rotation.z = this.orientation_ * WebGLVideo.ROT_SPEED;
     }
 
     this.render();
