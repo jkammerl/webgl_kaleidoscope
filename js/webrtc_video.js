@@ -30,7 +30,7 @@ WebRtcVideo.prototype.queryVideoSources = function (success_callback, video_sour
             var sourceInfo = sourceInfos[i];
             if (sourceInfo.kind === 'video') {
                 video_sources.push(sourceInfo);
-                console.log('Found video source - id: '+sourceInfo.id);
+                console.log('Found video source - id: ' + sourceInfo.id);
             }
         }
         success_callback(video_sources);
