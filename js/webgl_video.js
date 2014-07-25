@@ -117,9 +117,9 @@ WebGLVideo.prototype.createScene = function () {
         fragmentShader: this.shader_.fragmentShader
     });
 
-    var geom = new THREE.CircleGeometry(3, WebGLVideo.NUM_VERTICES);
+    var geom = new THREE.CircleGeometry(15, WebGLVideo.NUM_VERTICES);
     this.mesh_ = new THREE.Mesh(geom, material);
-    this.mesh_.position.set(0, 0, -3);
+    this.mesh_.position.set(0, 0, -15);
     this.camera_.lookAt(this.mesh_.position);
 
     this.scene_.add(this.mesh_);

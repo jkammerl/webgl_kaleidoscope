@@ -12,7 +12,6 @@ WebRtcVideo = function (containerEl, callback) {
 }
 
 WebRtcVideo.VIDEO_WIDTH = 640;
-
 WebRtcVideo.VIDEO_HEIGHT = 480;
 
 WebRtcVideo.prototype.createVideoElement = function (containerEl) {
