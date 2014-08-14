@@ -70,17 +70,17 @@ WebGLVideo.prototype.initWebGL = function (containerEl) {
     };
     var webrtc_video = new WebRtcVideo(document, webrtc_init_callback.bind(this));
 
+    this.onWindowResize();
+
     function setOrientationControls(e) {
         if (!e.alpha) {
           return;
         }
         this.orientation_ = e.alpha / 180.0 * Math.PI;
     }
-    window.addEventListener('deviceorientation', setOrientationControls, true);
+    window.addEventListener('deviceorientation', setOrientationControls.bind(this), true);
     window.addEventListener('resize', this.onWindowResize.bind(this), false);
-
     this.container_.addEventListener('click', this.onClickFullscreen.bind(this), false);
-
     return true;
 }
 
@@ -117,9 +117,9 @@ WebGLVideo.prototype.createScene = function () {
         fragmentShader: this.shader_.fragmentShader
     });
 
-    var geom = new THREE.CircleGeometry(15, WebGLVideo.NUM_VERTICES);
+    var geom = new THREE.CircleGeometry(150, WebGLVideo.NUM_VERTICES);
     this.mesh_ = new THREE.Mesh(geom, material);
-    this.mesh_.position.set(0, 0, -15);
+    this.mesh_.position.set(0, 0, -150);
     this.camera_.lookAt(this.mesh_.position);
 
     this.scene_.add(this.mesh_);

@@ -1,8 +1,13 @@
 WebRtcVideo = function (containerEl, callback) {  
     this.videoEl_ = this.createVideoElement(containerEl);
     var sourcesCallback = function(video_sources) {
-        if (video_sources.length>0) {
-            var videoSourceId = video_sources[video_sources.length-1];
+        var videoSourceId;
+        for (var i=0; i<video_sources.length; ++i) {
+           if (video_sources[i].facing=="environment") { 
+              videoSourceId = video_sources[i];
+            }
+        }          
+        if (videoSourceId != undefined) {
             this.initWebRtcVideo(callback, videoSourceId);
         } else {
             this.initWebRtcVideo(callback);
@@ -29,7 +34,7 @@ WebRtcVideo.prototype.queryVideoSources = function (success_callback, video_sour
             var sourceInfo = sourceInfos[i];
             if (sourceInfo.kind === 'video') {
                 video_sources.push(sourceInfo);
-                console.log('Found video source - id: ' + sourceInfo.id);
+                console.log('Found video source - id: ' + sourceInfo.id+sourceInfo.label);
             }
         }
         success_callback(video_sources);
@@ -64,11 +69,12 @@ WebRtcVideo.prototype.initWebRtcVideo = function (callback, video_source) {
             console.error(error);
         }
     }
-
+    
     if (navigator.getUserMedia) {
         var constraints = { video: true };
         if (video_source != undefined) {
-            console.log('Using video source:'+video_source.id)
+            console.log('Using video source:'+video_source.id);
+            constraints.video = {};
             constraints.video.optional = [{sourceId: video_source.id}];
         } else {
             console.log('Using default video device');
